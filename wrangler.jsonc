@@ -16,5 +16,11 @@
       "tag": "v1"
     }
   ],
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "invocation_logs": true
+    }
+  },
   "name": "notion-remote-mcp"
 }
