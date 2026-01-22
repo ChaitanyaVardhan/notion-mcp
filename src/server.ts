@@ -1,7 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
 import { z } from "zod";
-import icon from "./mcp-icon.svg";
 
 
 export class NotionMCP extends McpAgent<Env, {}> {
