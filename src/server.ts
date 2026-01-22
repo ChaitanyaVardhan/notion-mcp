@@ -3,11 +3,10 @@ import { McpAgent } from "agents/mcp";
 import { z } from "zod";
 import icon from "./mcp-icon.svg";
 
-type State = { counter: number, product: number };
 
-export class MyMCP extends McpAgent<Env, State, {}> {
+export class NotionMCP extends McpAgent<Env, {}> {
   server = new McpServer({
-    name: "Demo",
+    name: "notion-remote-mcp",
     version: "1.0.0",
     // Add icons and website URL to the server implementation
     icons: [
@@ -20,59 +19,7 @@ export class MyMCP extends McpAgent<Env, State, {}> {
     websiteUrl: "https://github.com/cloudflare/agents"
   });
 
-  initialState: State = {
-    counter: 1,
-    product: 0,
-  };
-
   async init() {
-    // Register resource - Note: Current MCP SDK doesn't support icons in resource method yet
-    // Icons are supported at the server implementation level
-    this.server.resource("counter", "mcp://resource/counter", (uri) => {
-      return {
-        contents: [{ text: String(this.state.counter), uri: uri.href }]
-      };
-    });
-    // Register tool - Note: Current MCP SDK doesn't support icons in tool method yet
-    // Icons are supported at the server implementation level
-    this.server.registerTool(
-      "add",
-      {
-        description: "Add to the counter, stored in the MCP",
-        inputSchema: { a: z.number() }
-      },
-      async ({ a }) => {
-        this.setState({ ...this.state, counter: this.state.counter + a });
-
-        return {
-          content: [
-            {
-              text: String(`Added ${a}, total is now ${this.state.counter}`),
-              type: "text"
-            }
-          ]
-        };
-      }
-    );
-    this.server.registerTool(
-      "multiply",
-      {
-        description: "Multiply 2 numbers",
-        inputSchema: { a: z.number(), b: z.number() }
-      },
-      async ({ a, b }) => {
-        this.setState({ ...this.state, product: this.state.product + a * b });
-
-        return {
-          content: [
-            {
-              text: String(`Multiplied ${a} and ${b}, product is now ${this.state.product}`),
-              type: "text"
-            }
-          ]
-        };
-      }
-    );
     this.server.registerTool(
       "get-notion-page-format",
       {
@@ -159,11 +106,11 @@ export class MyMCP extends McpAgent<Env, State, {}> {
         description: "this tool lists all notion pages",
         inputSchema: { }
       },
-      async ({ }) => {
+      async ({ }, { requestInfo }) => {
         const response = await fetch("https://api.notion.com/v1/search", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${accessToken}`,
+            "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28"
           },
@@ -206,11 +153,11 @@ export class MyMCP extends McpAgent<Env, State, {}> {
         description: "this tool lists all notion pages",
         inputSchema: {  pageData: z.string()}
       },
-      async ({ pageData }) => {
+      async ({  pageData }, { requestInfo }) => {
         const response = await fetch("https://api.notion.com/v1/pages", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${accessToken}`,
+            "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28"
           },
@@ -244,11 +191,11 @@ export class MyMCP extends McpAgent<Env, State, {}> {
         description: "this tool fetches a notion page",
         inputSchema: { pageId: z.string()}
       },
-      async ({ pageId }) => {
+      async ({ pageId }, { requestInfo }) => {
         const response = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
           method: "GET",
           headers: {
-            "Authorization": `Bearer ${accessToken}`,
+            "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28"
           }
@@ -281,11 +228,11 @@ export class MyMCP extends McpAgent<Env, State, {}> {
         description: "this tool lists the authenticated user",
         inputSchema: { }
       },
-      async ({ }) => {
+      async ({}, {requestInfo}) => {
         const response = await fetch("https://api.notion.com/v1/users/me", {
           method: "GET",
           headers: {
-            "Authorization": `Bearer ${accessToken}`,
+            "Authorization": `Bearer ${requestInfo?.headers["access-token"]}`,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28"
           }
@@ -312,35 +259,10 @@ export class MyMCP extends McpAgent<Env, State, {}> {
         };
       }
     );
-
-    // Note: To fully support icons on tools and resources, you would need to use
-    // the server's setRequestHandler method to manually implement the list handlers
-    // with icon metadata, as shown in the commented example below:
-
-    /*
-    this.server.server.setRequestHandler("tools/list", async () => {
-      return {
-        tools: [{
-          name: "add",
-          description: "Add to the counter, stored in the MCP",
-          inputSchema: { type: "object", properties: { a: { type: "number" } }, required: ["a"] },
-          icons: [{
-            src: "data:image/svg+xml;base64,...",
-            mimeType: "image/svg+xml",
-            sizes: "any"
-          }]
-        }]
-      };
-    });
-    */
-  }
-
-  onStateUpdate(state: State) {
-    console.log({ stateUpdate: state });
   }
 
   onError(_: unknown, error?: unknown): void | Promise<void> {
-    console.error("MyMCP initialization error:", error);
+    console.error("NotionMCP initialization error:", error);
 
     // Provide more specific error messages based on error type
     if (error instanceof Error) {
@@ -365,9 +287,8 @@ export default {
     const url = new URL(request.url);
 
     // support both legacy SSE and new streamable-http
-    console.log(`url: ${url}`)
     if (url.pathname.startsWith("/sse")) {
-      return MyMCP.serveSSE("/sse", { binding: "MyMCP" }).fetch(
+      return NotionMCP.serveSSE("/sse", { binding: "NotionMCP" }).fetch(
         request,
         env,
         ctx
@@ -375,7 +296,7 @@ export default {
     }
 
     if (url.pathname.startsWith("/mcp")) {
-      return MyMCP.serve("/mcp", { binding: "MyMCP" }).fetch(request, env, ctx);
+      return NotionMCP.serve("/mcp", { binding: "NotionMCP" }).fetch(request, env, ctx);
     }
 
     return new Response("Not found", { status: 404 });

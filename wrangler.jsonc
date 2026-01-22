@@ -4,17 +4,17 @@
   "durable_objects": {
     "bindings": [
       {
-        "class_name": "MyMCP",
-        "name": "MyMCP"
+        "class_name": "NotionMCP",
+        "name": "NotionMCP"
       }
     ]
   },
   "main": "src/server.ts",
   "migrations": [
     {
-      "new_sqlite_classes": ["MyMCP"],
+      "new_sqlite_classes": ["NotionMCP"],
       "tag": "v1"
     }
   ],
-  "name": "mcp-agent-demo"
+  "name": "notion-remote-mcp"
 }
