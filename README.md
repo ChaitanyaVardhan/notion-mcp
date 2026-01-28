@@ -3,7 +3,19 @@
 This remote MCP Agent runs in wrangler and is deployed to cloudflare worker.
 Tools implemented:  
  `list pages`, `create page`, `fetch page`, `list authenticated user`
-
+## Claude Desktop config  
+```
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://notion-mcp.curlmate.workers.dev/mcp",
+        "--header",
+        "access-token: your Notion Access Token from [https://curlmate.dev]https://curlmate.dev"
+      ]
+    }
+```
 ## Instruction
 
 ```sh
